@@ -96,8 +96,8 @@ public class MaterialShowcase: UIView {
   @objc public var aniRippleAlpha: CGFloat = 0.0
   @objc public var aniRippleType: RippleType = .circle
   @objc public var aniCloseType: CloseType = .expand
-  @objc public var aniCloseAnimationCurveOptions: UIViewKeyframeAnimationOptions = [.curveEaseIn, .calculationModeLinear]
-  @objc public var aniOpenAnimationCurveOptions: UIViewKeyframeAnimationOptions = [.curveEaseOut, .calculationModeLinear]
+  @objc public var aniCloseAnimationCurve: CAMediaTimingFunction = CAMediaTimingFunction(controlPoints: 0.4, 0, 1, 1) //CAMediaTimingFunction(name: kCAMediaTimingFunctionEaseIn)
+  @objc public var aniOpenAnimationCurve: CAMediaTimingFunction = CAMediaTimingFunction(controlPoints: 0, 0, 0.2, 1) //CAMediaTimingFunction(name: kCAMediaTimingFunctionEaseOut)
 
 
   
@@ -189,7 +189,10 @@ extension MaterialShowcase {
       self.instructionView.primaryLabel.alpha = 0
       self.instructionView.secondaryLabel.alpha = 0
 
-      UIView.animateKeyframes(withDuration: aniComeInDuration, delay: 0, options: aniOpenAnimationCurveOptions, animations: {
+      CATransaction.begin()
+      CATransaction.setAnimationTimingFunction(aniOpenAnimationCurve)
+      
+      UIView.animateKeyframes(withDuration: aniComeInDuration, delay: 0, options: [], animations: {
         UIView.addKeyframe(withRelativeStartTime: 0, relativeDuration: 1, animations: {
           self.targetHolderView.transform = CGAffineTransform(scaleX: 1, y: 1)
           self.backgroundView.transform = CGAffineTransform(scaleX: 1, y: 1)
@@ -209,6 +212,8 @@ extension MaterialShowcase {
       }) { _ in
         self.startAnimations()
       }
+      
+      CATransaction.commit()
     } else {
       self.alpha = 1.0
     }
@@ -590,7 +595,7 @@ extension MaterialShowcase {
       
       switch self.aniCloseType {
       case.expand:
-        UIView.animateKeyframes(withDuration: aniGoOutDuration, delay: 0, options: aniCloseAnimationCurveOptions, animations: {
+        UIView.animateKeyframes(withDuration: aniGoOutDuration, delay: 0, options: [], animations: {
           UIView.addKeyframe(withRelativeStartTime: 0, relativeDuration: 3/5, animations: {
             self.backgroundView.transform = CGAffineTransform(scaleX: 1.3, y: 1.3)
             self.targetHolderView.transform = CGAffineTransform(scaleX: 0.4, y: 0.4)
@@ -616,7 +621,10 @@ extension MaterialShowcase {
         let primaryFrame = self.instructionView.primaryLabel.frame
         let secondaryFrame = self.instructionView.secondaryLabel.frame
 
-        UIView.animateKeyframes(withDuration: aniGoOutDuration, delay: 0, options: aniCloseAnimationCurveOptions, animations: {
+        CATransaction.begin()
+        CATransaction.setAnimationTimingFunction(aniCloseAnimationCurve)
+
+        UIView.animateKeyframes(withDuration: aniGoOutDuration, delay: 0, options: [], animations: {
           UIView.addKeyframe(withRelativeStartTime: 0, relativeDuration: 1, animations: {
             self.backgroundView.transform = CGAffineTransform(scaleX: scaleX, y: scaleY)
             self.targetHolderView.transform = CGAffineTransform(scaleX: 0.4, y: 0.4)
@@ -638,6 +646,8 @@ extension MaterialShowcase {
           // Remove it from current screen
           self.removeFromSuperview()
         })
+        
+        CATransaction.commit()
       }
     } else {
       // Recycle subviews
