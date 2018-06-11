@@ -77,6 +77,7 @@ public class MaterialShowcase: UIView {
   @objc public var targetTintColor: UIColor!
   @objc public var targetHolderRadius: CGFloat = 0.0
   @objc public var targetHolderColor: UIColor!
+  @objc public var targetBoundsInset: CGPoint = CGPoint.zero
   // Text
   @objc public var primaryText: String!
   @objc public var secondaryText: String!
@@ -418,9 +419,9 @@ extension MaterialShowcase {
     // Init according ripple type
     switch aniRippleType {
     case .circle:
-      targetRippleView = UIView(frame: CGRect(x: 0, y: 0, width: targetHolderRadius * 2,height: targetHolderRadius * 2))
+      targetRippleView = UIView(frame: CGRect(x: 0, y: 0, width: targetHolderRadius * 2,height: targetHolderRadius * 2).insetBy(dx: targetBoundsInset.x, dy: targetBoundsInset.y))
     case .square:
-      targetRippleView = UIView(frame: CGRect(x: 0, y: 0, width: targetView.frame.width, height: targetView.frame.height))
+      targetRippleView = UIView(frame: CGRect(x: 0, y: 0, width: targetView.frame.width, height: targetView.frame.height).insetBy(dx: targetBoundsInset.x, dy: targetBoundsInset.y))
     }
     
     targetRippleView.center = center
@@ -447,9 +448,9 @@ extension MaterialShowcase {
     
     switch aniRippleType {
     case .circle:
-      targetHolderView = UIView(frame: CGRect(x: 0, y: 0, width: targetHolderRadius * 2,height: targetHolderRadius * 2))
+      targetHolderView = UIView(frame: CGRect(x: 0, y: 0, width: targetHolderRadius * 2,height: targetHolderRadius * 2).insetBy(dx: targetBoundsInset.x, dy: targetBoundsInset.y))
     case .square:
-      targetHolderView = UIView(frame: CGRect(x: 0, y: 0, width: targetView.frame.width,height: targetView.frame.height))
+      targetHolderView = UIView(frame: CGRect(x: 0, y: 0, width: targetView.frame.width,height: targetView.frame.height).insetBy(dx: targetBoundsInset.x, dy: targetBoundsInset.y))
     }
     
     targetHolderView.center = center
@@ -472,7 +473,9 @@ extension MaterialShowcase {
   /// Create a copy view of target view
   /// It helps us not to affect the original target view
   private func addTarget(at center: CGPoint) {
-    targetCopyView = targetView.snapshotView(afterScreenUpdates: true)
+    targetCopyView = targetView.resizableSnapshotView(from: targetView.frame.insetBy(dx: targetBoundsInset.x, dy: targetBoundsInset.y),
+                                                      afterScreenUpdates: true,
+                                                      withCapInsets: .zero)
     
     if shouldSetTintColor {
       targetCopyView.setTintColor(targetTintColor, recursive: true)
@@ -627,7 +630,6 @@ extension MaterialShowcase {
         UIView.animateKeyframes(withDuration: aniGoOutDuration, delay: 0, options: [], animations: {
           UIView.addKeyframe(withRelativeStartTime: 0, relativeDuration: 1, animations: {
             self.backgroundView.transform = CGAffineTransform(scaleX: scaleX, y: scaleY)
-            self.targetHolderView.transform = CGAffineTransform(scaleX: 0.4, y: 0.4)
           })
 
           UIView.addKeyframe(withRelativeStartTime: 0.2, relativeDuration: 0.6, animations: {
