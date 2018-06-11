@@ -24,6 +24,11 @@ public class MaterialShowcase: UIView {
     case square // same size of view
   }
   
+  @objc public enum CloseType: Int {
+    case expand //default
+    case collapse // collapse to target
+  }
+  
   // MARK: Material design guideline constant
   let BACKGROUND_ALPHA: CGFloat = 0.96
   let TARGET_HOLDER_RADIUS: CGFloat = 44
@@ -90,7 +95,8 @@ public class MaterialShowcase: UIView {
   @objc public var aniRippleColor: UIColor!
   @objc public var aniRippleAlpha: CGFloat = 0.0
   @objc public var aniRippleType: RippleType = .circle
-
+  @objc public var aniCloseType: CloseType = .expand
+  
   // Delegate
   @objc public weak var delegate: MaterialShowcaseDelegate?
   
@@ -554,21 +560,45 @@ extension MaterialShowcase {
     }
     if animated {
       targetRippleView.removeFromSuperview()
-      UIView.animateKeyframes(withDuration: aniGoOutDuration, delay: 0, options: [.calculationModeLinear], animations: {
-        UIView.addKeyframe(withRelativeStartTime: 0, relativeDuration: 3/5, animations: {
-          self.targetHolderView.transform = CGAffineTransform(scaleX: 0.4, y: 0.4)
-          self.backgroundView.transform = CGAffineTransform(scaleX: 1.3, y: 1.3)
-          self.backgroundView.alpha = 0
+      
+      switch self.aniCloseType {
+      case.expand:
+        UIView.animateKeyframes(withDuration: aniGoOutDuration, delay: 0, options: [.calculationModeLinear], animations: {
+          UIView.addKeyframe(withRelativeStartTime: 0, relativeDuration: 3/5, animations: {
+            self.backgroundView.transform = CGAffineTransform(scaleX: 1.3, y: 1.3)
+            self.targetHolderView.transform = CGAffineTransform(scaleX: 0.4, y: 0.4)
+            self.backgroundView.alpha = 0
+          })
+          UIView.addKeyframe(withRelativeStartTime: 3/5, relativeDuration: 2/5, animations: {
+            self.alpha = 0
+          })
+        }, completion: { (success) in
+          // Recycle subviews
+          self.recycleSubviews()
+          // Remove it from current screen
+          self.removeFromSuperview()
         })
-        UIView.addKeyframe(withRelativeStartTime: 3/5, relativeDuration: 2/5, animations: {
-          self.alpha = 0
+      case .collapse:
+
+        let minAxis = min(targetView.frame.width, targetView.frame.height)
+        let scaleX = minAxis / self.backgroundView.frame.width
+        let scaleY = minAxis / self.backgroundView.frame.height
+
+        UIView.animateKeyframes(withDuration: aniGoOutDuration, delay: 0, options: [.calculationModeLinear], animations: {
+          UIView.addKeyframe(withRelativeStartTime: 0, relativeDuration: 1, animations: {
+            self.backgroundView.transform = CGAffineTransform(scaleX: scaleX, y: scaleY)
+            self.targetHolderView.transform = CGAffineTransform(scaleX: 0.4, y: 0.4)
+          })
+          UIView.addKeyframe(withRelativeStartTime: 0, relativeDuration: 0.6, animations: {
+            self.instructionView.alpha = 0
+          })
+        }, completion: { (success) in
+          // Recycle subviews
+          self.recycleSubviews()
+          // Remove it from current screen
+          self.removeFromSuperview()
         })
-      }, completion: { (success) in
-        // Recycle subviews
-        self.recycleSubviews()
-        // Remove it from current screen
-        self.removeFromSuperview()
-      })
+      }
     } else {
       // Recycle subviews
       self.recycleSubviews()
