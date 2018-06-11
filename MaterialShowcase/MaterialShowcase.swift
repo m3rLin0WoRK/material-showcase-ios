@@ -96,6 +96,9 @@ public class MaterialShowcase: UIView {
   @objc public var aniRippleAlpha: CGFloat = 0.0
   @objc public var aniRippleType: RippleType = .circle
   @objc public var aniCloseType: CloseType = .expand
+  @objc public var aniCloseAnimationCurveOptions: UIViewKeyframeAnimationOptions = [.curveEaseIn, .calculationModeLinear]
+  
+
   
   // Delegate
   @objc public weak var delegate: MaterialShowcaseDelegate?
@@ -563,7 +566,7 @@ extension MaterialShowcase {
       
       switch self.aniCloseType {
       case.expand:
-        UIView.animateKeyframes(withDuration: aniGoOutDuration, delay: 0, options: [.calculationModeLinear], animations: {
+        UIView.animateKeyframes(withDuration: aniGoOutDuration, delay: 0, options: aniCloseAnimationCurveOptions, animations: {
           UIView.addKeyframe(withRelativeStartTime: 0, relativeDuration: 3/5, animations: {
             self.backgroundView.transform = CGAffineTransform(scaleX: 1.3, y: 1.3)
             self.targetHolderView.transform = CGAffineTransform(scaleX: 0.4, y: 0.4)
@@ -584,7 +587,7 @@ extension MaterialShowcase {
         let scaleX = minAxis / self.backgroundView.frame.width
         let scaleY = minAxis / self.backgroundView.frame.height
 
-        UIView.animateKeyframes(withDuration: aniGoOutDuration, delay: 0, options: [.calculationModeLinear], animations: {
+        UIView.animateKeyframes(withDuration: aniGoOutDuration, delay: 0, options: aniCloseAnimationCurveOptions, animations: {
           UIView.addKeyframe(withRelativeStartTime: 0, relativeDuration: 1, animations: {
             self.backgroundView.transform = CGAffineTransform(scaleX: scaleX, y: scaleY)
             self.targetHolderView.transform = CGAffineTransform(scaleX: 0.4, y: 0.4)
