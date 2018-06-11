@@ -19,6 +19,16 @@ public class MaterialShowcase: UIView {
     case full//full screen
   }
   
+  @objc public enum RippleType: Int {
+    case circle //default
+    case square // same size of view
+  }
+  
+  @objc public enum CloseType: Int {
+    case expand //default
+    case collapse // collapse to target
+  }
+  
   // MARK: Material design guideline constant
   let BACKGROUND_ALPHA: CGFloat = 0.96
   let TARGET_HOLDER_RADIUS: CGFloat = 44
@@ -84,6 +94,13 @@ public class MaterialShowcase: UIView {
   @objc public var aniRippleScale: CGFloat = 0.0
   @objc public var aniRippleColor: UIColor!
   @objc public var aniRippleAlpha: CGFloat = 0.0
+  @objc public var aniRippleType: RippleType = .circle
+  @objc public var aniCloseType: CloseType = .expand
+  @objc public var aniCloseAnimationCurve: CAMediaTimingFunction = CAMediaTimingFunction(controlPoints: 0.4, 0, 1, 1) //CAMediaTimingFunction(name: kCAMediaTimingFunctionEaseIn)
+  @objc public var aniOpenAnimationCurve: CAMediaTimingFunction = CAMediaTimingFunction(controlPoints: 0, 0, 0.2, 1) //CAMediaTimingFunction(name: kCAMediaTimingFunctionEaseOut)
+
+
+  
   // Delegate
   @objc public weak var delegate: MaterialShowcaseDelegate?
   
@@ -161,14 +178,42 @@ extension MaterialShowcase {
     backgroundView.transform = CGAffineTransform(scaleX: scale, y: scale) // Initial set to support animation
     self.backgroundView.center = self.targetHolderView.center
     if animated {
-      UIView.animate(withDuration: aniComeInDuration, animations: {
-        self.targetHolderView.transform = CGAffineTransform(scaleX: 1, y: 1)
-        self.backgroundView.transform = CGAffineTransform(scaleX: 1, y: 1)
-        self.backgroundView.center = center
-        self.alpha = 1.0
-      }, completion: { _ in
+
+      // LABEL FRAMES (non lo faccio con le transform perché per qualche motivo le duplica)
+      let offsetY: CGFloat = 8
+      let primaryFrame = self.instructionView.primaryLabel.frame
+      let secondaryFrame = self.instructionView.secondaryLabel.frame
+      
+      self.instructionView.primaryLabel.frame = primaryFrame.offsetBy(dx: 0, dy: offsetY)
+      self.instructionView.secondaryLabel.frame = secondaryFrame.offsetBy(dx: 0, dy: offsetY)
+      self.instructionView.primaryLabel.alpha = 0
+      self.instructionView.secondaryLabel.alpha = 0
+
+      CATransaction.begin()
+      CATransaction.setAnimationTimingFunction(aniOpenAnimationCurve)
+      
+      UIView.animateKeyframes(withDuration: aniComeInDuration, delay: 0, options: [], animations: {
+        UIView.addKeyframe(withRelativeStartTime: 0, relativeDuration: 1, animations: {
+          self.targetHolderView.transform = CGAffineTransform(scaleX: 1, y: 1)
+          self.backgroundView.transform = CGAffineTransform(scaleX: 1, y: 1)
+          self.backgroundView.center = center
+          self.alpha = 1.0
+        })
+
+        UIView.addKeyframe(withRelativeStartTime: 0.45, relativeDuration: 0.5, animations: {
+          self.instructionView.primaryLabel.frame = primaryFrame
+          self.instructionView.primaryLabel.alpha = 1
+        })
+
+        UIView.addKeyframe(withRelativeStartTime: 0.5, relativeDuration: 0.5, animations: {
+          self.instructionView.secondaryLabel.frame = secondaryFrame
+          self.instructionView.secondaryLabel.alpha = 1
+        })
+      }) { _ in
         self.startAnimations()
-      })
+      }
+      
+      CATransaction.commit()
     } else {
       self.alpha = 1.0
     }
@@ -230,18 +275,52 @@ extension MaterialShowcase {
   }
   
   func startAnimations() {
+    
+    // X & Y Deltas animation scale
+    let startScaleXDelta: CGFloat = 0.1
+    let startScaleYDelta: CGFloat = 0.1
+    let endScaleXDelta: CGFloat = self.aniRippleScale - 1.0
+    let endScaleYDelta: CGFloat = self.aniRippleScale - 1.0
+    
+    // Calculate ratio
+    let ratio: CGFloat
+    switch aniRippleType {
+    case .circle:
+      ratio = 1
+    case .square:
+      ratio = targetRippleView.frame.width / targetRippleView.frame.height
+    }
+    
+    // Calculate transforms
+    var startScaleX: CGFloat
+    var startScaleY: CGFloat
+    var endScaleX: CGFloat
+    var endScaleY: CGFloat
+
+    if ratio > 1 {
+      startScaleX = 1.0 + ((1.0 / ratio) * startScaleXDelta)
+      startScaleY = 1.0 + startScaleYDelta
+      endScaleX = 1.0 + ((1.0 / ratio) * endScaleXDelta)
+      endScaleY = 1.0 + endScaleYDelta
+    } else {
+      startScaleX = 1.0 + startScaleXDelta
+      startScaleY = 1.0 + (ratio * startScaleXDelta)
+      endScaleX = 1.0 + endScaleXDelta
+      endScaleY = 1.0 + (ratio * endScaleXDelta)
+    }
+    
     let options: UIViewKeyframeAnimationOptions = [.curveEaseInOut, .repeat]
     UIView.animateKeyframes(withDuration: 1, delay: 0, options: options, animations: {
       UIView.addKeyframe(withRelativeStartTime: 0, relativeDuration: 0.5, animations: {
         self.targetRippleView.alpha = self.ANI_RIPPLE_ALPHA
-        self.targetHolderView.transform = CGAffineTransform(scaleX: 1.1, y: 1.1)
-        self.targetRippleView.transform = CGAffineTransform(scaleX: 1.1, y: 1.1)
+        self.targetHolderView.transform = CGAffineTransform(scaleX: startScaleX, y: startScaleY)
+        self.targetRippleView.transform = CGAffineTransform(scaleX: startScaleX, y: startScaleY)
       })
       
       UIView.addKeyframe(withRelativeStartTime: 0.5, relativeDuration: 0.5, animations: {
         self.targetHolderView.transform = CGAffineTransform.identity
         self.targetRippleView.alpha = 0
-        self.targetRippleView.transform = CGAffineTransform(scaleX: self.aniRippleScale, y: self.aniRippleScale)
+        self.targetRippleView.transform = CGAffineTransform(scaleX: endScaleX, y: endScaleY)
       })
       
     }, completion: nil)
@@ -310,7 +389,13 @@ extension MaterialShowcase {
     }
     backgroundView.backgroundColor = backgroundPromptColor.withAlphaComponent(backgroundPromptColorAlpha)
     insertSubview(backgroundView, belowSubview: targetRippleView)
-    addBackgroundMask(with: targetHolderRadius, in: backgroundView)
+    
+    switch aniRippleType {
+    case .circle:
+      addBackgroundMask(with: targetHolderRadius, in: backgroundView)
+    case .square:
+      addBackgroundMask(with: 0, in: backgroundView)
+    }
 
   }
   
@@ -330,24 +415,54 @@ extension MaterialShowcase {
   
   /// A background view which add ripple animation when showing target view
   private func addTargetRipple(at center: CGPoint) {
-    targetRippleView = UIView(frame: CGRect(x: 0, y: 0, width: targetHolderRadius * 2,height: targetHolderRadius * 2))
+    // Init according ripple type
+    switch aniRippleType {
+    case .circle:
+      targetRippleView = UIView(frame: CGRect(x: 0, y: 0, width: targetHolderRadius * 2,height: targetHolderRadius * 2))
+    case .square:
+      targetRippleView = UIView(frame: CGRect(x: 0, y: 0, width: targetView.frame.width, height: targetView.frame.height))
+    }
+    
     targetRippleView.center = center
     targetRippleView.backgroundColor = aniRippleColor
     targetRippleView.alpha = 0.0 //set it invisible
-    targetRippleView.asCircle()
-    addSubview(targetRippleView)
     
+    switch aniRippleType {
+    case .circle:
+      targetRippleView.asCircle()
+    case .square:
+      // Do nothing... (for now!)
+      break
+    }
+
+    
+    addSubview(targetRippleView)
   }
 	
   
-  /// A circle-shape background view of target view
+  /// A shape background view of target view
   private func addTargetHolder(at center: CGPoint) {
     hiddenTargetHolderView = UIView()
     hiddenTargetHolderView.backgroundColor = .clear
-    targetHolderView = UIView(frame: CGRect(x: 0, y: 0, width: targetHolderRadius * 2,height: targetHolderRadius * 2))
+    
+    switch aniRippleType {
+    case .circle:
+      targetHolderView = UIView(frame: CGRect(x: 0, y: 0, width: targetHolderRadius * 2,height: targetHolderRadius * 2))
+    case .square:
+      targetHolderView = UIView(frame: CGRect(x: 0, y: 0, width: targetView.frame.width,height: targetView.frame.height))
+    }
+    
     targetHolderView.center = center
     targetHolderView.backgroundColor = targetHolderColor
-    targetHolderView.asCircle()
+
+    switch aniRippleType {
+    case .circle:
+      targetHolderView.asCircle()
+    case .square:
+      // Do nothing... (for now!)
+      break
+    }
+
     hiddenTargetHolderView.frame = targetHolderView.frame
     targetHolderView.transform = CGAffineTransform(scaleX: 1/ANI_TARGET_HOLDER_SCALE, y: 1/ANI_TARGET_HOLDER_SCALE) // Initial set to support animation
     addSubview(hiddenTargetHolderView)
@@ -477,21 +592,63 @@ extension MaterialShowcase {
     }
     if animated {
       targetRippleView.removeFromSuperview()
-      UIView.animateKeyframes(withDuration: aniGoOutDuration, delay: 0, options: [.calculationModeLinear], animations: {
-        UIView.addKeyframe(withRelativeStartTime: 0, relativeDuration: 3/5, animations: {
-          self.targetHolderView.transform = CGAffineTransform(scaleX: 0.4, y: 0.4)
-          self.backgroundView.transform = CGAffineTransform(scaleX: 1.3, y: 1.3)
-          self.backgroundView.alpha = 0
+      
+      switch self.aniCloseType {
+      case.expand:
+        UIView.animateKeyframes(withDuration: aniGoOutDuration, delay: 0, options: [], animations: {
+          UIView.addKeyframe(withRelativeStartTime: 0, relativeDuration: 3/5, animations: {
+            self.backgroundView.transform = CGAffineTransform(scaleX: 1.3, y: 1.3)
+            self.targetHolderView.transform = CGAffineTransform(scaleX: 0.4, y: 0.4)
+            self.backgroundView.alpha = 0
+          })
+          UIView.addKeyframe(withRelativeStartTime: 3/5, relativeDuration: 2/5, animations: {
+            self.alpha = 0
+          })
+        }, completion: { (success) in
+          // Recycle subviews
+          self.recycleSubviews()
+          // Remove it from current screen
+          self.removeFromSuperview()
         })
-        UIView.addKeyframe(withRelativeStartTime: 3/5, relativeDuration: 2/5, animations: {
-          self.alpha = 0
+      case .collapse:
+
+        let minAxis = min(targetView.frame.width, targetView.frame.height)
+        let scaleX = minAxis / self.backgroundView.frame.width
+        let scaleY = minAxis / self.backgroundView.frame.height
+
+        
+        let offsetY: CGFloat = 8
+        let primaryFrame = self.instructionView.primaryLabel.frame
+        let secondaryFrame = self.instructionView.secondaryLabel.frame
+
+        CATransaction.begin()
+        CATransaction.setAnimationTimingFunction(aniCloseAnimationCurve)
+
+        UIView.animateKeyframes(withDuration: aniGoOutDuration, delay: 0, options: [], animations: {
+          UIView.addKeyframe(withRelativeStartTime: 0, relativeDuration: 1, animations: {
+            self.backgroundView.transform = CGAffineTransform(scaleX: scaleX, y: scaleY)
+            self.targetHolderView.transform = CGAffineTransform(scaleX: 0.4, y: 0.4)
+          })
+
+          UIView.addKeyframe(withRelativeStartTime: 0.2, relativeDuration: 0.6, animations: {
+            self.instructionView.primaryLabel.frame = primaryFrame.offsetBy(dx: 0, dy: offsetY)
+            self.instructionView.primaryLabel.alpha = 0
+          })
+
+          UIView.addKeyframe(withRelativeStartTime: 0.0, relativeDuration: 0.6, animations: {
+            self.instructionView.secondaryLabel.frame = secondaryFrame.offsetBy(dx: 0, dy: offsetY)
+            self.instructionView.secondaryLabel.alpha = 0
+          })
+          
+        }, completion: { (success) in
+          // Recycle subviews
+          self.recycleSubviews()
+          // Remove it from current screen
+          self.removeFromSuperview()
         })
-      }, completion: { (success) in
-        // Recycle subviews
-        self.recycleSubviews()
-        // Remove it from current screen
-        self.removeFromSuperview()
-      })
+        
+        CATransaction.commit()
+      }
     } else {
       // Recycle subviews
       self.recycleSubviews()
