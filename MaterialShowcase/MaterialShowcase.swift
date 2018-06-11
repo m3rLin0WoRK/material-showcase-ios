@@ -178,12 +178,33 @@ extension MaterialShowcase {
     backgroundView.transform = CGAffineTransform(scaleX: scale, y: scale) // Initial set to support animation
     self.backgroundView.center = self.targetHolderView.center
     if animated {
+
+      // LABEL FRAMES (non lo faccio con le transform perché per qualche motivo le duplica)
+      let offsetY: CGFloat = 8
+      let primaryFrame = self.instructionView.primaryLabel.frame
+      let secondaryFrame = self.instructionView.secondaryLabel.frame
+      
+      self.instructionView.primaryLabel.frame = primaryFrame.offsetBy(dx: 0, dy: offsetY)
+      self.instructionView.secondaryLabel.frame = secondaryFrame.offsetBy(dx: 0, dy: offsetY)
+      self.instructionView.primaryLabel.alpha = 0
+      self.instructionView.secondaryLabel.alpha = 0
+
       UIView.animateKeyframes(withDuration: aniComeInDuration, delay: 0, options: aniOpenAnimationCurveOptions, animations: {
         UIView.addKeyframe(withRelativeStartTime: 0, relativeDuration: 1, animations: {
           self.targetHolderView.transform = CGAffineTransform(scaleX: 1, y: 1)
           self.backgroundView.transform = CGAffineTransform(scaleX: 1, y: 1)
           self.backgroundView.center = center
           self.alpha = 1.0
+        })
+
+        UIView.addKeyframe(withRelativeStartTime: 0.45, relativeDuration: 0.5, animations: {
+          self.instructionView.primaryLabel.frame = primaryFrame
+          self.instructionView.primaryLabel.alpha = 1
+        })
+
+        UIView.addKeyframe(withRelativeStartTime: 0.5, relativeDuration: 0.5, animations: {
+          self.instructionView.secondaryLabel.frame = secondaryFrame
+          self.instructionView.secondaryLabel.alpha = 1
         })
       }) { _ in
         self.startAnimations()
@@ -590,14 +611,27 @@ extension MaterialShowcase {
         let scaleX = minAxis / self.backgroundView.frame.width
         let scaleY = minAxis / self.backgroundView.frame.height
 
+        
+        let offsetY: CGFloat = 8
+        let primaryFrame = self.instructionView.primaryLabel.frame
+        let secondaryFrame = self.instructionView.secondaryLabel.frame
+
         UIView.animateKeyframes(withDuration: aniGoOutDuration, delay: 0, options: aniCloseAnimationCurveOptions, animations: {
           UIView.addKeyframe(withRelativeStartTime: 0, relativeDuration: 1, animations: {
             self.backgroundView.transform = CGAffineTransform(scaleX: scaleX, y: scaleY)
             self.targetHolderView.transform = CGAffineTransform(scaleX: 0.4, y: 0.4)
           })
-          UIView.addKeyframe(withRelativeStartTime: 0, relativeDuration: 0.6, animations: {
-            self.instructionView.alpha = 0
+
+          UIView.addKeyframe(withRelativeStartTime: 0.2, relativeDuration: 0.6, animations: {
+            self.instructionView.primaryLabel.frame = primaryFrame.offsetBy(dx: 0, dy: offsetY)
+            self.instructionView.primaryLabel.alpha = 0
           })
+
+          UIView.addKeyframe(withRelativeStartTime: 0.0, relativeDuration: 0.6, animations: {
+            self.instructionView.secondaryLabel.frame = secondaryFrame.offsetBy(dx: 0, dy: offsetY)
+            self.instructionView.secondaryLabel.alpha = 0
+          })
+          
         }, completion: { (success) in
           // Recycle subviews
           self.recycleSubviews()
