@@ -19,6 +19,11 @@ public class MaterialShowcase: UIView {
     case full//full screen
   }
   
+  @objc public enum RippleType: Int {
+    case circle //default
+    case square // same size of view
+  }
+  
   // MARK: Material design guideline constant
   let BACKGROUND_ALPHA: CGFloat = 0.96
   let TARGET_HOLDER_RADIUS: CGFloat = 44
@@ -84,6 +89,8 @@ public class MaterialShowcase: UIView {
   @objc public var aniRippleScale: CGFloat = 0.0
   @objc public var aniRippleColor: UIColor!
   @objc public var aniRippleAlpha: CGFloat = 0.0
+  @objc public var aniRippleType: RippleType = .circle
+
   // Delegate
   @objc public weak var delegate: MaterialShowcaseDelegate?
   
@@ -230,18 +237,52 @@ extension MaterialShowcase {
   }
   
   func startAnimations() {
+    
+    // X & Y Deltas animation scale
+    let startScaleXDelta: CGFloat = 0.1
+    let startScaleYDelta: CGFloat = 0.1
+    let endScaleXDelta: CGFloat = self.aniRippleScale - 1.0
+    let endScaleYDelta: CGFloat = self.aniRippleScale - 1.0
+    
+    // Calculate ratio
+    let ratio: CGFloat
+    switch aniRippleType {
+    case .circle:
+      ratio = 1
+    case .square:
+      ratio = targetRippleView.frame.width / targetRippleView.frame.height
+    }
+    
+    // Calculate transforms
+    var startScaleX: CGFloat
+    var startScaleY: CGFloat
+    var endScaleX: CGFloat
+    var endScaleY: CGFloat
+
+    if ratio > 1 {
+      startScaleX = 1.0 + ((1.0 / ratio) * startScaleXDelta)
+      startScaleY = 1.0 + startScaleYDelta
+      endScaleX = 1.0 + ((1.0 / ratio) * endScaleXDelta)
+      endScaleY = 1.0 + endScaleYDelta
+    } else {
+      startScaleX = 1.0 + startScaleXDelta
+      startScaleY = 1.0 + (ratio * startScaleXDelta)
+      endScaleX = 1.0 + endScaleXDelta
+      endScaleY = 1.0 + (ratio * endScaleXDelta)
+    }
+    
     let options: UIViewKeyframeAnimationOptions = [.curveEaseInOut, .repeat]
     UIView.animateKeyframes(withDuration: 1, delay: 0, options: options, animations: {
       UIView.addKeyframe(withRelativeStartTime: 0, relativeDuration: 0.5, animations: {
         self.targetRippleView.alpha = self.ANI_RIPPLE_ALPHA
-        self.targetHolderView.transform = CGAffineTransform(scaleX: 1.1, y: 1.1)
-        self.targetRippleView.transform = CGAffineTransform(scaleX: 1.1, y: 1.1)
+        self.targetHolderView.transform = CGAffineTransform(scaleX: startScaleX, y: startScaleY)
+        self.targetRippleView.transform = CGAffineTransform(scaleX: startScaleX, y: startScaleY)
       })
       
       UIView.addKeyframe(withRelativeStartTime: 0.5, relativeDuration: 0.5, animations: {
         self.targetHolderView.transform = CGAffineTransform.identity
         self.targetRippleView.alpha = 0
-        self.targetRippleView.transform = CGAffineTransform(scaleX: self.aniRippleScale, y: self.aniRippleScale)
+        self.targetRippleView.transform = CGAffineTransform(scaleX: endScaleX, y: endScaleY)
       })
       
     }, completion: nil)
@@ -310,7 +351,13 @@ extension MaterialShowcase {
     }
     backgroundView.backgroundColor = backgroundPromptColor.withAlphaComponent(backgroundPromptColorAlpha)
     insertSubview(backgroundView, belowSubview: targetRippleView)
-    addBackgroundMask(with: targetHolderRadius, in: backgroundView)
+    
+    switch aniRippleType {
+    case .circle:
+      addBackgroundMask(with: targetHolderRadius, in: backgroundView)
+    case .square:
+      addBackgroundMask(with: 0, in: backgroundView)
+    }
 
   }
   
@@ -330,24 +377,54 @@ extension MaterialShowcase {
   
   /// A background view which add ripple animation when showing target view
   private func addTargetRipple(at center: CGPoint) {
-    targetRippleView = UIView(frame: CGRect(x: 0, y: 0, width: targetHolderRadius * 2,height: targetHolderRadius * 2))
+    // Init according ripple type
+    switch aniRippleType {
+    case .circle:
+      targetRippleView = UIView(frame: CGRect(x: 0, y: 0, width: targetHolderRadius * 2,height: targetHolderRadius * 2))
+    case .square:
+      targetRippleView = UIView(frame: CGRect(x: 0, y: 0, width: targetView.frame.width, height: targetView.frame.height))
+    }
+    
     targetRippleView.center = center
     targetRippleView.backgroundColor = aniRippleColor
     targetRippleView.alpha = 0.0 //set it invisible
-    targetRippleView.asCircle()
-    addSubview(targetRippleView)
     
+    switch aniRippleType {
+    case .circle:
+      targetRippleView.asCircle()
+    case .square:
+      // Do nothing... (for now!)
+      break
+    }
+
+    
+    addSubview(targetRippleView)
   }
 	
   
-  /// A circle-shape background view of target view
+  /// A shape background view of target view
   private func addTargetHolder(at center: CGPoint) {
     hiddenTargetHolderView = UIView()
     hiddenTargetHolderView.backgroundColor = .clear
-    targetHolderView = UIView(frame: CGRect(x: 0, y: 0, width: targetHolderRadius * 2,height: targetHolderRadius * 2))
+    
+    switch aniRippleType {
+    case .circle:
+      targetHolderView = UIView(frame: CGRect(x: 0, y: 0, width: targetHolderRadius * 2,height: targetHolderRadius * 2))
+    case .square:
+      targetHolderView = UIView(frame: CGRect(x: 0, y: 0, width: targetView.frame.width,height: targetView.frame.height))
+    }
+    
     targetHolderView.center = center
     targetHolderView.backgroundColor = targetHolderColor
-    targetHolderView.asCircle()
+
+    switch aniRippleType {
+    case .circle:
+      targetHolderView.asCircle()
+    case .square:
+      // Do nothing... (for now!)
+      break
+    }
+
     hiddenTargetHolderView.frame = targetHolderView.frame
     targetHolderView.transform = CGAffineTransform(scaleX: 1/ANI_TARGET_HOLDER_SCALE, y: 1/ANI_TARGET_HOLDER_SCALE) // Initial set to support animation
     addSubview(hiddenTargetHolderView)
