@@ -97,7 +97,8 @@ public class MaterialShowcase: UIView {
   @objc public var aniRippleType: RippleType = .circle
   @objc public var aniCloseType: CloseType = .expand
   @objc public var aniCloseAnimationCurveOptions: UIViewKeyframeAnimationOptions = [.curveEaseIn, .calculationModeLinear]
-  
+  @objc public var aniOpenAnimationCurveOptions: UIViewKeyframeAnimationOptions = [.curveEaseOut, .calculationModeLinear]
+
 
   
   // Delegate
@@ -177,14 +178,16 @@ extension MaterialShowcase {
     backgroundView.transform = CGAffineTransform(scaleX: scale, y: scale) // Initial set to support animation
     self.backgroundView.center = self.targetHolderView.center
     if animated {
-      UIView.animate(withDuration: aniComeInDuration, animations: {
-        self.targetHolderView.transform = CGAffineTransform(scaleX: 1, y: 1)
-        self.backgroundView.transform = CGAffineTransform(scaleX: 1, y: 1)
-        self.backgroundView.center = center
-        self.alpha = 1.0
-      }, completion: { _ in
+      UIView.animateKeyframes(withDuration: aniComeInDuration, delay: 0, options: aniOpenAnimationCurveOptions, animations: {
+        UIView.addKeyframe(withRelativeStartTime: 0, relativeDuration: 1, animations: {
+          self.targetHolderView.transform = CGAffineTransform(scaleX: 1, y: 1)
+          self.backgroundView.transform = CGAffineTransform(scaleX: 1, y: 1)
+          self.backgroundView.center = center
+          self.alpha = 1.0
+        })
+      }) { _ in
         self.startAnimations()
-      })
+      }
     } else {
       self.alpha = 1.0
     }
