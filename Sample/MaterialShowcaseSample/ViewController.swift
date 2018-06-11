@@ -91,6 +91,7 @@ class ViewController: UIViewController {
     showcase.secondaryText = "Click here to go into details"
     showcase.isTapRecognizerForTagretView = true
     showcase.delegate = self
+    showcase.aniRippleType = .square
     showcase.show(completion: nil)
   }
   @IBAction func showInSeries(_ sender: UIButton) {
