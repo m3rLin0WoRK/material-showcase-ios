@@ -396,7 +396,7 @@ extension MaterialShowcase {
           //TODO: Per il momento solo con square, a circle lascio il default
           radius = getOuterCircleRadius(center: center, textBounds: instructionView.frame, targetBounds: targetRippleView.frame)
         case .square:
-          let offsetPercentage = 0.1
+          let offsetPercentage: CGFloat = 0.1
           if getTargetPosition(target: targetView, container: containerView) == .above {
             let targetCenter = calculateCenter(at: targetView, to: containerView)
             
