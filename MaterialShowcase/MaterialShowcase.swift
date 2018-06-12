@@ -160,7 +160,7 @@ extension MaterialShowcase {
   /// Sets a UITableViewCell as target
   @objc public func setTargetView(tableView: UITableView, section: Int, row: Int) {
     let indexPath = IndexPath(row: row, section: section)
-    targetView = tableView.cellForRow(at: indexPath)?.contentView
+    targetView = tableView.cellForRow(at: indexPath)//?.contentView
     // for table viewcell, we do not need target holder (circle view)
     // therefore, set its radius = 0
     targetHolderRadius = 0
@@ -346,6 +346,19 @@ extension MaterialShowcase {
     addInstructionView(at: center)
     instructionView.layoutIfNeeded()
     
+    //FIX LAYOUT INSTRUCTION AFTER LAYOUT
+    var frame = instructionView.frame
+    let offset: CGFloat = 20
+    if getTargetPosition(target: targetView, container: containerView) == .above {
+      frame.origin.y = (center.y + targetView.bounds.height * 0.5) + offset
+      instructionView.frame = frame
+    } else {
+      frame.origin.y = (center.y - targetView.bounds.height * 0.5 - frame.size.height) - offset
+      instructionView.frame = frame
+    }
+    
+    //END FIX
+    
     //In iPhone version InstructionView was add to self view
     if UIDevice.current.userInterfaceIdiom != .pad {
       addBackground()
@@ -473,9 +486,11 @@ extension MaterialShowcase {
   /// Create a copy view of target view
   /// It helps us not to affect the original target view
   private func addTarget(at center: CGPoint) {
-    targetCopyView = targetView.resizableSnapshotView(from: targetView.frame.insetBy(dx: targetBoundsInset.x, dy: targetBoundsInset.y),
+    let frame = targetView.bounds.insetBy(dx: targetBoundsInset.x, dy: targetBoundsInset.y)
+    targetCopyView = targetView.resizableSnapshotView(from: frame,
                                                       afterScreenUpdates: true,
                                                       withCapInsets: .zero)
+
     
     if shouldSetTintColor {
       targetCopyView.setTintColor(targetTintColor, recursive: true)
