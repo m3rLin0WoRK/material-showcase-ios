@@ -386,12 +386,37 @@ extension MaterialShowcase {
     case .circle:
       let radius: CGFloat!
       
-      let center = targetRippleView.center//getOuterCircleCenterPoint(for: targetCopyView)
+      var center = targetRippleView.center//getOuterCircleCenterPoint(for: targetCopyView)
       
       if UIDevice.current.userInterfaceIdiom == .pad {
         radius = 300.0
       } else {
-        radius = getOuterCircleRadius(center: center, textBounds: instructionView.frame, targetBounds: targetRippleView.frame)
+        switch aniRippleType {
+        case .circle:
+          //TODO: Per il momento solo con square, a circle lascio il default
+          radius = getOuterCircleRadius(center: center, textBounds: instructionView.frame, targetBounds: targetRippleView.frame)
+        case .square:
+          let offsetPercentage = 0.1
+          if getTargetPosition(target: targetView, container: containerView) == .above {
+            let targetCenter = calculateCenter(at: targetView, to: containerView)
+            
+            let rightCorner = CGPoint(x: targetCenter.x + targetView.bounds.width * 0.5,
+                                      y: targetCenter.y - targetView.bounds.height * 0.5)
+
+            let bottomScreen = CGPoint(x: UIScreen.main.bounds.width * 0.5, y: UIScreen.main.bounds.height)
+            radius = distance(rightCorner, bottomScreen)
+
+            center = CGPoint(x: bottomScreen.x, y: bottomScreen.y - abs(targetCenter.y - bottomScreen.y) * offsetPercentage)
+          } else {
+            let targetCenter = calculateCenter(at: targetView, to: containerView)
+            let rightCornerBottom = CGPoint(x: targetCenter.x + targetView.bounds.width * 0.5,
+                                            y: targetCenter.y + targetView.bounds.height * 0.5)
+            let topScreen = CGPoint(x: UIScreen.main.bounds.width * 0.5, y: 0)
+            radius = distance(rightCornerBottom, topScreen)
+            
+            center = CGPoint(x: topScreen.x, y: topScreen.y + abs(targetCenter.y - topScreen.y) * offsetPercentage)
+          }
+        }
       }
       
       backgroundView = UIView(frame: CGRect(x: 0, y: 0, width: radius * 2,height: radius * 2))
