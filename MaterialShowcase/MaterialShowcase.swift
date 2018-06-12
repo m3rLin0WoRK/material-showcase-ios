@@ -160,7 +160,7 @@ extension MaterialShowcase {
   /// Sets a UITableViewCell as target
   @objc public func setTargetView(tableView: UITableView, section: Int, row: Int) {
     let indexPath = IndexPath(row: row, section: section)
-    targetView = tableView.cellForRow(at: indexPath)?.contentView
+    targetView = tableView.cellForRow(at: indexPath)//?.contentView
     // for table viewcell, we do not need target holder (circle view)
     // therefore, set its radius = 0
     targetHolderRadius = 0
@@ -473,9 +473,11 @@ extension MaterialShowcase {
   /// Create a copy view of target view
   /// It helps us not to affect the original target view
   private func addTarget(at center: CGPoint) {
-    targetCopyView = targetView.resizableSnapshotView(from: targetView.frame.insetBy(dx: targetBoundsInset.x, dy: targetBoundsInset.y),
+    let frame = targetView.bounds.insetBy(dx: targetBoundsInset.x, dy: targetBoundsInset.y)
+    targetCopyView = targetView.resizableSnapshotView(from: frame,
                                                       afterScreenUpdates: true,
                                                       withCapInsets: .zero)
+
     
     if shouldSetTintColor {
       targetCopyView.setTintColor(targetTintColor, recursive: true)
