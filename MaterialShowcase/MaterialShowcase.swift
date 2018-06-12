@@ -346,6 +346,19 @@ extension MaterialShowcase {
     addInstructionView(at: center)
     instructionView.layoutIfNeeded()
     
+    //FIX LAYOUT INSTRUCTION AFTER LAYOUT
+    var frame = instructionView.frame
+    let offset: CGFloat = 20
+    if getTargetPosition(target: targetView, container: containerView) == .above {
+      frame.origin.y = (center.y + targetView.bounds.height * 0.5) + offset
+      instructionView.frame = frame
+    } else {
+      frame.origin.y = (center.y - targetView.bounds.height * 0.5 - frame.size.height) - offset
+      instructionView.frame = frame
+    }
+    
+    //END FIX
+    
     //In iPhone version InstructionView was add to self view
     if UIDevice.current.userInterfaceIdiom != .pad {
       addBackground()
