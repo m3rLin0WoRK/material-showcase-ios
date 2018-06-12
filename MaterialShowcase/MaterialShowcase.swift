@@ -396,7 +396,8 @@ extension MaterialShowcase {
           //TODO: Per il momento solo con square, a circle lascio il default
           radius = getOuterCircleRadius(center: center, textBounds: instructionView.frame, targetBounds: targetRippleView.frame)
         case .square:
-          let offsetPercentage: CGFloat = 0.1
+          let offsetPercentage: CGFloat = 0.5
+          let radiusMargin: CGFloat = 16
           if getTargetPosition(target: targetView, container: containerView) == .above {
             let targetCenter = calculateCenter(at: targetView, to: containerView)
             
@@ -404,17 +405,19 @@ extension MaterialShowcase {
                                       y: targetCenter.y - targetView.bounds.height * 0.5)
 
             let bottomScreen = CGPoint(x: UIScreen.main.bounds.width * 0.5, y: UIScreen.main.bounds.height)
-            radius = distance(rightCorner, bottomScreen)
-
             center = CGPoint(x: bottomScreen.x, y: bottomScreen.y - abs(targetCenter.y - bottomScreen.y) * offsetPercentage)
+
+            radius = distance(rightCorner, center) + radiusMargin
+
           } else {
             let targetCenter = calculateCenter(at: targetView, to: containerView)
             let rightCornerBottom = CGPoint(x: targetCenter.x + targetView.bounds.width * 0.5,
                                             y: targetCenter.y + targetView.bounds.height * 0.5)
             let topScreen = CGPoint(x: UIScreen.main.bounds.width * 0.5, y: 0)
-            radius = distance(rightCornerBottom, topScreen)
-            
             center = CGPoint(x: topScreen.x, y: topScreen.y + abs(targetCenter.y - topScreen.y) * offsetPercentage)
+
+            radius = distance(rightCornerBottom, center) + radiusMargin
+            
           }
         }
       }
@@ -664,12 +667,15 @@ extension MaterialShowcase {
         let primaryFrame = self.instructionView.primaryLabel.frame
         let secondaryFrame = self.instructionView.secondaryLabel.frame
 
+        let bgCenter = calculateCenter(at: targetView, to: containerView)
+        
         CATransaction.begin()
         CATransaction.setAnimationTimingFunction(aniCloseAnimationCurve)
 
         UIView.animateKeyframes(withDuration: aniGoOutDuration, delay: 0, options: [], animations: {
           UIView.addKeyframe(withRelativeStartTime: 0, relativeDuration: 1, animations: {
             self.backgroundView.transform = CGAffineTransform(scaleX: scaleX, y: scaleY)
+            self.backgroundView.center = bgCenter
           })
 
           UIView.addKeyframe(withRelativeStartTime: 0.2, relativeDuration: 0.6, animations: {
